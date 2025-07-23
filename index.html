@@ -1,0 +1,21 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>SatoshiVerse</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <canvas id="universe"></canvas>
+  <div id="ui">
+    <input type="text" id="addressInput" placeholder="Enter address or block height...">
+    <button onclick="flyTo()">Fly</button>
+    <select id="colorMode" onchange="setColorMode(this.value)">
+      <option value="age">Color by Age</option>
+      <option value="miner">Color by Miner</option>
+      <option value="fees">Color by Fees</option>
+    </select>
+  </div>
+  <script src="src/app.js" type="module"></script>
+</body>
+</html>

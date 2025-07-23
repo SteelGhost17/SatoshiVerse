@@ -35,4 +35,8 @@ Open the shown URL (e.g. http://localhost:8080).
 - Save/share camera positions (“galactic bookmarks”)
 - Mobile/AR mode
 
+  Bitcoin Donations Welcome 💛
+
+bc1q2wmetjmphcc3p69zqsr89nklw06tkkk4s97k0l
+
 MIT License. Built by Bitcoin nerds for Bitcoin nerds. 🧡

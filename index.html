@@ -1,21 +1,52 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
+  <meta charset="UTF-8" />
   <title>SatoshiVerse</title>
-  <link rel="stylesheet" href="style.css">
+  <link rel="stylesheet" href="style.css" />
 </head>
 <body>
   <canvas id="universe"></canvas>
+
   <div id="ui">
-    <input type="text" id="addressInput" placeholder="Enter address or block height...">
+    <button id="toggleUIBtn" title="Hide/Show panel (H)">✕</button>
+    <input type="text" id="addressInput" placeholder="Enter block height or address..." />
     <button onclick="flyTo()">Fly</button>
+    <br /><br />
+    <label>Color mode:</label>
     <select id="colorMode" onchange="setColorMode(this.value)">
-      <option value="age">Color by Age</option>
-      <option value="miner">Color by Miner</option>
-      <option value="fees">Color by Fees</option>
+      <option value="fees">Fees (brightness)</option>
+      <option value="age">Age</option>
+      <option value="miner">Miner</option>
     </select>
+    <br /><br />
+    <details open>
+      <summary>Filters</summary>
+      <label><input type="checkbox" id="filterHighFee" /> High fee blocks (&gt;0.2 BTC)</label><br />
+      <label><input type="checkbox" id="filterRBF" /> Has RBF txs</label><br />
+      <label>Miner:
+        <select id="filterMiner">
+          <option value="">All</option>
+        </select>
+      </label><br />
+      <label><input type="checkbox" id="toggleTxOrbits" checked /> Show TX orbits</label><br />
+      <label>Max TX per block:
+        <input type="range" id="maxTxPerBlock" min="0" max="20" value="10" />
+        <span id="maxTxVal">10</span>
+      </label><br />
+    </details>
+    <details>
+      <summary>Perf</summary>
+      <label><input type="checkbox" id="toggleFPS" /> Show FPS</label><br />
+      <label>Resolution scale:
+        <input type="range" id="pixelRatioScale" min="0.5" max="1" step="0.05" value="0.85" />
+        <span id="pixelRatioVal">0.85</span>
+      </label>
+    </details>
+    <p style="font-size:11px;opacity:0.7">Shortcuts: H hide UI · F focus Genesis · +/- zoom</p>
   </div>
-  <script src="src/app.js" type="module"></script>
+
+  <script src="https://cdn.jsdelivr.net/npm/stats.js@0.17.0/build/stats.min.js"></script>
+  <script type="module" src="src/app.js"></script>
 </body>
 </html>

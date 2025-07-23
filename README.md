@@ -1,42 +1,38 @@
 # SatoshiVerse 🌌
 
-**SatoshiVerse** is a real-time, interactive 3D universe built from the Bitcoin blockchain.
+**SatoshiVerse** is a real-time, interactive WebGL universe generated from the Bitcoin blockchain.
 
-- 🌟 Blocks are stars
-- 🌀 Transactions orbit like comets
-- 🌞 The Genesis block is a glowing white dwarf
-- 💥 Halving events are explosive novas
-- 🧭 Fly mode, filters, color schemes, and address constellation rendering
-- 🌐 Powered by mempool.space API
+- 🌟 Blocks are stars, brightness by fees, distance by height
+- 🌀 Transactions orbit their parent block
+- 🌞 Genesis block is a glowing white dwarf at the center
+- 💥 Halving blocks trigger a nova ring explosion
+- 🔍 Hover tooltips, filters, color modes, fly mode
+- 🧭 Type any block height or address to explore
+- 🔄 Real-time: new blocks appear automatically
+- 🎛️ Perf controls: hide UI, toggle TX orbits, lower resolution, FPS counter
 
-## 🔧 Getting Started
-
-To run locally:
+## 🚀 Run Locally
 
 ```bash
-git clone https://github.com/SteelGhost17/satoshiverse.git
+git clone https://github.com/YOUR_USERNAME/satoshiverse.git
 cd satoshiverse
-npx http-server
+npx http-server   # or use any static server (VSCode Live Server, python -m http.server, etc.)
 ```
 
-Or use [Live Server](https://marketplace.visualstudio.com/items?itemName=ritwickdey.LiveServer) in VS Code.
+Open the shown URL (e.g. http://localhost:8080).
 
-## 📦 Features (In Progress)
-
-- Real-time block + mempool data
-- Zoom, pan, and fly through Bitcoin's universe
-- Hover tooltips on stars
-- Address constellation renderer
-- Color modes by miner, fee, or age
-
-## 🛠️ Built With
+## 🛠 Tech
 
 - [Three.js](https://threejs.org/)
 - [mempool.space API](https://mempool.space/docs/api/)
-- HTML, CSS, JavaScript (modular)
+- Vanilla JS modules, HTML, CSS
 
-BTC donations welcome ❤
+## ✨ Roadmap Ideas
 
-bc1q2wmetjmphcc3p69zqsr89nklw06tkkk4s97k0l
+- GPU particle field for mempool txs
+- Music / sound synthesis from blocks and fees
+- Multiplayer / shared explorers (Nostr/IPFS)
+- Save/share camera positions (“galactic bookmarks”)
+- Mobile/AR mode
 
-MIT Licensed. Built with love by Bitcoiners 🧡
+MIT License. Built by Bitcoin nerds for Bitcoin nerds. 🧡

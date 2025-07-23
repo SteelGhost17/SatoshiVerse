@@ -1,6 +1,6 @@
 {
   "name": "satoshiverse",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "description": "Bitcoin blockchain visualized as a universe",
   "scripts": {
     "serve": "http-server",

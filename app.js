@@ -1,14 +1,19 @@
-import { initScene, animate, flyToBlock, setColorMode, setFilters, showAddressConstellation, addBlockStar, setShowTxOrbits, setPixelRatio } from './render.js';
-import { fetchLatestBlocks, fetchAddressInfo, fetchRecentBlocks, fetchBlockTxs, fetchBlockByHeight } from './data.js';
+import { initScene, animate, flyToBlock, setColorMode, setFilters, showAddressConstellation, addBlockStar, setShowTxOrbits, setPixelRatio, getState, spawnComets, setShowComets } from './render.js';
+import { fetchLatestBlocks, fetchAddressInfo, fetchRecentBlocks, fetchBlockTxs, fetchBlockByHeight, fetchRecentMempoolTxs } from './data.js';
+import { runDiagnostics } from './diagnostics.js';
 
 let loadedBlocks = [];
+let realtimeTimer = null;
+const POLL_MS = 30000;
+
+let mempoolTimer = null;
+const MEMPOOL_MS = 5000;
 
 window.onload = async () => {
   loadedBlocks = await fetchLatestBlocks();
   initScene(loadedBlocks);
   animate();
 
-  // Populate miner filter list
   const miners = Array.from(new Set(loadedBlocks.map(b => b.extras?.pool?.name || 'Unknown')));
   const minerSelect = document.getElementById('filterMiner');
   miners.sort().forEach(m => {
@@ -18,7 +23,6 @@ window.onload = async () => {
     minerSelect.appendChild(opt);
   });
 
-  // Filter events
   document.getElementById('filterHighFee').addEventListener('change', e => {
     setFilters({ highFee: e.target.checked });
   });
@@ -26,19 +30,20 @@ window.onload = async () => {
     setFilters({ miner: e.target.value });
   });
 
-  // TX orbits toggle
+  document.getElementById('filterRBF').addEventListener('change', e => {
+    setFilters({ rbf: e.target.checked });
+  });
+
   document.getElementById('toggleTxOrbits').addEventListener('change', e=>{
     setShowTxOrbits(e.target.checked);
   });
 
-  // Max TX per block slider (display only for now)
   const maxTxSlider = document.getElementById('maxTxPerBlock');
   const maxTxVal = document.getElementById('maxTxVal');
   maxTxSlider.addEventListener('input', e=>{
     maxTxVal.textContent = e.target.value;
   });
 
-  // Pixel ratio scale
   const prSlider = document.getElementById('pixelRatioScale');
   const prVal = document.getElementById('pixelRatioVal');
   prSlider.addEventListener('input', e=>{
@@ -46,15 +51,13 @@ window.onload = async () => {
     setPixelRatio(parseFloat(e.target.value));
   });
 
-  // UI hide/show
   const toggleBtn = document.getElementById('toggleUIBtn');
   toggleBtn.addEventListener('click', ()=>document.body.classList.toggle('hidden-ui'));
   window.addEventListener('keydown', (ev)=>{
     if(ev.key==='h' || ev.key==='H'){ document.body.classList.toggle('hidden-ui'); }
-    if(ev.key==='f' || ev.key==='F'){ flyToBlock(0); } // focus genesis
+    if(ev.key==='f' || ev.key==='F'){ flyToBlock(0); }
   });
 
-  // FPS toggle
   let stats = null;
   const fpsChk = document.getElementById('toggleFPS');
   fpsChk.addEventListener('change', e=>{
@@ -62,7 +65,6 @@ window.onload = async () => {
       stats = new Stats(); stats.showPanel(0);
       stats.dom.id='fpsPanel';
       document.body.appendChild(stats.dom);
-      // hook RAF
       const loop = ()=>{
         stats.begin();
         requestAnimationFrame(loop);
@@ -74,11 +76,35 @@ window.onload = async () => {
     }
   });
 
-  // Start realtime
+  // Comets controls
+  document.getElementById('toggleComets').addEventListener('change', e=>{
+    setShowComets(e.target.checked);
+  });
+  const maxCometsSlider = document.getElementById('maxComets');
+  const maxCometsVal = document.getElementById('maxCometsVal');
+  maxCometsSlider.addEventListener('input', e=>{
+    maxCometsVal.textContent = e.target.value;
+  });
+
+  document.getElementById('runTestsBtn').addEventListener('click', async ()=>{
+    const panel = document.getElementById('diagPanel');
+    panel.style.display = 'block';
+    panel.innerHTML = "Running tests...";
+    const res = await runDiagnostics({
+      getState,
+      flyToBlock,
+      setFilters,
+      setColorMode,
+      showAddressConstellation,
+      startRealtime
+    });
+    panel.innerHTML = res.map(r => `${r.ok ? "✅" : "❌"} ${r.msg}`).join('<br>');
+  });
+
   startRealtime();
+  startMempoolStream();
 };
 
-// Fly/Address
 window.flyTo = async function () {
   const val = document.getElementById('addressInput').value.trim();
   if (!val) return;
@@ -90,13 +116,11 @@ window.flyTo = async function () {
         const block = await fetchBlockByHeight(height);
         loadedBlocks.push(block);
         addBlockStar(block);
-        // refresh colors/filters/miner list
         setColorMode(document.getElementById('colorMode').value);
         const hf = document.getElementById('filterHighFee').checked;
         const miner = document.getElementById('filterMiner').value;
         const rbf = document.getElementById('filterRBF').checked;
         setFilters({highFee:hf, miner, rbf});
-        // add miner if new
         const minerSelect = document.getElementById('filterMiner');
         if (![...minerSelect.options].some(o=>o.value=== (block.extras?.pool?.name||'Unknown'))) {
           const opt = document.createElement('option');
@@ -119,10 +143,6 @@ window.flyTo = async function () {
     alert('Invalid address or fetch failed.');
   }
 };
-
-// Realtime polling
-let realtimeTimer = null;
-const POLL_MS = 30000;
 
 async function pollNewBlocks(){
   try{
@@ -164,4 +184,20 @@ async function pollNewBlocks(){
 function startRealtime(){
   if(realtimeTimer) return;
   realtimeTimer = setInterval(pollNewBlocks, POLL_MS);
+}
+
+async function pollMempool(){
+  try{
+    const limit = parseInt(document.getElementById('maxComets').value, 10);
+    const txs = await fetchRecentMempoolTxs(limit);
+    const latestHeight = Math.max(...loadedBlocks.map(b=>b.height));
+    spawnComets(txs, latestHeight);
+  }catch(e){
+    console.warn('Mempool poll error:', e);
+  }
+}
+
+function startMempoolStream(){
+  if(mempoolTimer) return;
+  mempoolTimer = setInterval(pollMempool, MEMPOOL_MS);
 }

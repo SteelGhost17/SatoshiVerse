@@ -58,3 +58,10 @@ export async function fetchBlockByHeight(height){
   }
   return block;
 }
+
+export async function fetchRecentMempoolTxs(limit = 50) {
+  const res = await fetch('https://mempool.space/api/mempool/recent');
+  if (!res.ok) throw new Error('Mempool recent failed');
+  const txs = await res.json();
+  return txs.slice(0, limit);
+}

@@ -9,6 +9,10 @@ let showTxOrbits = true;
 let lastHoverCheck = 0;
 const HOVER_MS = 100;
 
+let cometGroup = null;
+let showComets = true;
+let activeComets = [];
+
 // Fly mode vars
 let flyTargetPos = null;
 let flyTargetLook = null;
@@ -30,7 +34,6 @@ export function initScene(blocks = []) {
 
   window.addEventListener('resize', onResize, false);
 
-  // Tooltip element
   tooltipEl = document.createElement('div');
   tooltipEl.id = 'tooltip';
   tooltipEl.style.position = 'absolute';
@@ -43,7 +46,6 @@ export function initScene(blocks = []) {
   tooltipEl.style.fontSize = '12px';
   document.body.appendChild(tooltipEl);
 
-  // Genesis star
   const genesisGeo = new THREE.SphereGeometry(2, 32, 32);
   const genesisMat = new THREE.MeshBasicMaterial({ color: 0xffffff, emissive: 0xffffee });
   const genesisStar = new THREE.Mesh(genesisGeo, genesisMat);
@@ -60,7 +62,6 @@ export function initScene(blocks = []) {
   scene.add(genesisStar);
   starsByHeight.set(0, genesisStar);
 
-  // Block stars
   starGroup = new THREE.Group();
   blocks.forEach((block) => {
     const star = createStarForBlock(block);
@@ -71,13 +72,16 @@ export function initScene(blocks = []) {
       addTxOrbitsToStar(star, block.txList);
     }
 
-    // halving
     if (block.height > 0 && block.height % 210000 === 0) {
       setTimeout(() => spawnNova(star.position, block.height), 100);
     }
   });
 
   scene.add(starGroup);
+
+  cometGroup = new THREE.Group();
+  scene.add(cometGroup);
+
   camera.position.set(0, 0, 120);
 
   raycaster = new THREE.Raycaster();
@@ -181,8 +185,13 @@ export function setFilters(newFilters) {
 }
 
 export function setShowTxOrbits(v){showTxOrbits=v; if(!v){hideAllTx();} else {showAllTx();}}
+export function setShowComets(v){ showComets = v; if(cometGroup) cometGroup.visible = v; }
 
 export function setPixelRatio(scale){ if(renderer) renderer.setPixelRatio(window.devicePixelRatio*scale); }
+
+export function getState(){
+  return { scene, camera, starGroup, addressGroup, starsByHeight, filters, colorMode };
+}
 
 function hideAllTx(){
   starGroup.children.forEach(star=>{
@@ -226,7 +235,7 @@ function applyColorToStar(star) {
     }
     case 'age': {
       const now = Date.now() / 1000;
-      const maxAge = 60 * 60 * 24 * 365 * 2; // 2y
+      const maxAge = 60 * 60 * 24 * 365 * 2;
       const age = Math.min(1, (now - d.timestamp) / maxAge);
       color = new THREE.Color().setHSL(0.66 - 0.66 * age, 1, 0.5);
       break;
@@ -322,10 +331,42 @@ export function showAddressConstellation(address, stats) {
   flyTargetLook = center.position.clone();
 }
 
+export function spawnComets(txs, latestHeight) {
+  if (!showComets || !cometGroup) return;
+
+  const radius = (latestHeight + 1) * 0.1 + 5;
+  const angle  = (latestHeight + 1) * 0.1;
+  const target = new THREE.Vector3(
+    Math.cos(angle) * radius,
+    0,
+    Math.sin(angle) * radius
+  );
+
+  txs.forEach(tx => {
+    const feerate = tx.fee && tx.vsize ? tx.fee / tx.vsize : 0;   // sat/vB
+    const size = THREE.MathUtils.clamp(Math.log10(feerate + 1) * 0.1, 0.04, 0.35);
+
+    const geo = new THREE.SphereGeometry(size, 8, 8);
+    const mat = new THREE.MeshBasicMaterial({ color: 0xff8800 });
+    const mesh = new THREE.Mesh(geo, mat);
+
+    const startR = radius + 80 + Math.random() * 40;
+    const startA = Math.random() * Math.PI * 2;
+    const startY = (Math.random() - 0.5) * 20;
+    mesh.position.set(Math.cos(startA) * startR, startY, Math.sin(startA) * startR);
+
+    const baseSpeed = 0.22;
+    const speedBoost = THREE.MathUtils.clamp(feerate / 1000, 0, 0.5);
+    const speed = baseSpeed + speedBoost;
+
+    activeComets.push({ mesh, target, speed });
+    cometGroup.add(mesh);
+  });
+}
+
 export function animate() {
   requestAnimationFrame(animate);
 
-  // Camera fly tween
   if (flyTargetPos && flyTargetLook) {
     camera.position.lerp(flyTargetPos, flySpeed);
     camera.lookAt(flyTargetLook);
@@ -335,7 +376,6 @@ export function animate() {
     }
   }
 
-  // Update tx positions
   if(showTxOrbits){
     starGroup.children.forEach(star => {
       if (star.userData?.txs) {
@@ -352,7 +392,23 @@ export function animate() {
     });
   }
 
-  // Update nova effects
+  // Comets
+  if (showComets && activeComets.length){
+    activeComets = activeComets.filter(c => {
+      const dir = new THREE.Vector3().subVectors(c.target, c.mesh.position);
+      const dist = dir.length();
+      if (dist < 1.5) {
+        cometGroup.remove(c.mesh);
+        c.mesh.geometry.dispose();
+        c.mesh.material.dispose();
+        return false;
+      }
+      dir.normalize().multiplyScalar(c.speed);
+      c.mesh.position.add(dir);
+      return true;
+    });
+  }
+
   if (novaEffects.length) {
     const now = performance.now();
     novaEffects = novaEffects.filter(n => {
@@ -371,7 +427,6 @@ export function animate() {
     });
   }
 
-  // Hover detection (throttled)
   const nowHover = performance.now();
   if (nowHover - lastHoverCheck > HOVER_MS){
     lastHoverCheck = nowHover;

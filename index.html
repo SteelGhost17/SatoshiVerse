@@ -43,6 +43,19 @@
         <span id="pixelRatioVal">0.85</span>
       </label>
     </details>
+    <details>
+      <summary>Mempool Comets</summary>
+      <label><input type="checkbox" id="toggleComets" checked> Show mempool comets</label><br>
+      <label>Max comets:
+        <input type="range" id="maxComets" min="0" max="200" value="50">
+        <span id="maxCometsVal">50</span>
+      </label><br>
+    </details>
+    <details>
+      <summary>Diagnostics</summary>
+      <button id="runTestsBtn">Run Self-Test</button>
+      <div id="diagPanel" style="display:none;max-height:200px;overflow:auto;font-size:12px;margin-top:8px;border:1px solid rgba(255,255,255,.2);padding:6px;"></div>
+    </details>
     <p style="font-size:11px;opacity:0.7">Shortcuts: H hide UI · F focus Genesis · +/- zoom</p>
   </div>
 

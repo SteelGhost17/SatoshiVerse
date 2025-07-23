@@ -1,0 +1,14 @@
+{
+  "name": "satoshiverse",
+  "version": "1.0.0",
+  "description": "Bitcoin blockchain visualized as a universe",
+  "scripts": {
+    "serve": "http-server",
+    "test": "playwright test --reporter=list"
+  },
+  "devDependencies": {
+    "@playwright/test": "^1.45.0",
+    "eslint": "^9.0.0",
+    "http-server": "^14.1.1"
+  }
+}
